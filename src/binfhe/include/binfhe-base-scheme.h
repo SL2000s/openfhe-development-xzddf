@@ -60,7 +60,8 @@ typedef struct {
 
 /**
  * @brief Ring GSW accumulator schemes described in
- * https://eprint.iacr.org/2014/816, https://eprint.iacr.org/2020/086 and https://eprint.iacr.org/2022/198
+ * https://eprint.iacr.org/2014/816, https://eprint.iacr.org/2020/086, https://eprint.iacr.org/2022/198,
+ * and https://eprint.iacr.org/2023/1564
  */
 class BinFHEScheme {
 public:
