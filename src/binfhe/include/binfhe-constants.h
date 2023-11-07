@@ -97,8 +97,12 @@ enum BINFHE_PARAMSET {
                         // optimize runtime by finding a non-power-of-two n for 4 binary inputs
     STD256Q_4,          // more than 256 bits of security for quantum computer attacks -
                         // optimize runtime by finding a non-power-of-two n for 4 binary inputs
-    SIGNED_MOD_TEST     // special parameter set for confirming the signed modular
+    SIGNED_MOD_TEST,    // special parameter set for confirming the signed modular
                         // reduction in the accumulator updates works correctly
+    P128T,              // ia.cr/2023/1564
+    P128G,              // ia.cr/2023/1564
+    P192T,              // ia.cr/2023/1564
+    P192G               // ia.cr/2023/1564
 };
 std::ostream& operator<<(std::ostream& s, BINFHE_PARAMSET f);
 
@@ -122,6 +126,7 @@ enum BINFHE_METHOD {
     AP,       // Ducas-Micciancio variant
     GINX,     // Chillotti-Gama-Georgieva-Izabachene variant
     LMKCDEY,  // Lee-Micciancio-Kim-Choi-Deryabin-Eom-Yoo variant, ia.cr/2022/198
+    XZDDF,    // Xiang-Zhang-Deng-Dai-Feng,  ia.cr/2023/1564
 };
 std::ostream& operator<<(std::ostream& s, BINFHE_METHOD f);
 

@@ -122,6 +122,18 @@ void RingGSWCryptoParams::PreCompute(bool signEval) {
             m_logGen[M - gPow] = -i;
         }
     }
+
+    // TODO: now copy of AP, change to XZDDF
+    // Computes baseR^i (only for AP bootstrapping)
+    if (m_method == BINFHE_METHOD::XZDDF) {
+        auto&& logq = log(m_q.ConvertToDouble());
+        auto digitCountR{static_cast<size_t>(std::ceil(logq / log(static_cast<double>(m_baseR))))};
+        m_digitsR.clear();
+        m_digitsR.reserve(digitCountR);
+        BasicInteger value{1};
+        for (size_t i = 0; i < digitCountR; ++i, value *= m_baseR)
+            m_digitsR.emplace_back(value);
+    }
 }
 
 };  // namespace lbcrypto

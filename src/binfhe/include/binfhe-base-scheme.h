@@ -40,6 +40,7 @@
 #include "rgsw-acc-dm.h"
 #include "rgsw-acc-cggi.h"
 #include "rgsw-acc-lmkcdey.h"
+#include "rgsw-acc-xzddf.h"
 
 #include <map>
 #include <memory>
@@ -72,6 +73,8 @@ public:
             ACCscheme = std::make_shared<RingGSWAccumulatorCGGI>();
         else if (method == LMKCDEY)
             ACCscheme = std::make_shared<RingGSWAccumulatorLMKCDEY>();
+        else if (method == XZDDF)
+            ACCscheme = std::make_shared<RingGSWAccumulatorXZDDF>();
         else
             OPENFHE_THROW(config_error, "method is invalid");
     }

@@ -68,7 +68,7 @@ public:
    * @param q ciphertext modulus for additive LWE
    * @param baseG the gadget base used in the bootstrapping
    * @param baseR the base for the refreshing key
-   * @param method bootstrapping method (DM or CGGI or LMKCDEY)
+   * @param method bootstrapping method (DM or CGGI or LMKCDEY or XZDDF)
    * @param std standar deviation
    * @param keyDist secret key distribution
    * @param signEval flag if sign evaluation is needed
@@ -278,7 +278,7 @@ private:
     // (used only for CGGI bootstrapping)
     std::vector<NativePoly> m_monomials;
 
-    // Bootstrapping method (DM or CGGI or LMKCDEY)
+    // Bootstrapping method (DM or CGGI or LMKCDEY or XZDDF)
     BINFHE_METHOD m_method{BINFHE_METHOD::INVALID_METHOD};
 
     // Secret key distribution: GAUSSIAN, UNIFORM_TERNARY, etc.

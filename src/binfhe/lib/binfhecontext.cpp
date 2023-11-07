@@ -142,6 +142,10 @@ void BinFHEContext::GenerateBinFHEContext(BINFHE_PARAMSET set, BINFHE_METHOD met
         { STD192Q_4,         { 34,     4096,         980, 2048, 1 << 17, STD_DEV,     16,    1 << 12,  32,    10,  UNIFORM_TERNARY} },
         { STD256Q_4,         { 27,     4096,        1625, 4096, 1 << 21, STD_DEV,     16,    1 <<  6,  32,    10,  UNIFORM_TERNARY} },
         { SIGNED_MOD_TEST,   { 28,     2048,         512, 1024,   PRIME, STD_DEV,     25,    1 <<  7,  23,    10,  UNIFORM_TERNARY} },
+        { P128T,             { 20,     2048,         512, 1024, 1 << 14, STD_DEV,     28,    1 <<  4,  32,    10,  UNIFORM_TERNARY} }, // ia.cr/2023/1564; TODO: gadgetbase, baseRK??
+        { P128G,             { 20,     2048,         465, 1024, 1 << 14, STD_DEV,     28,    1 <<  4,  32,    10,  GAUSSIAN       } }, // ia.cr/2023/1564; TODO: gadgetbase, baseRK??
+        { P192T,             { 26,     4096,         1024, 1024, 1 << 19,STD_DEV,     28,    1 <<  9,  32,    10,  UNIFORM_TERNARY} }, // ia.cr/2023/1564; TODO: gadgetbase, baseRK??
+        { P192G,             { 26,     4096,         870, 1024, 1 << 17, STD_DEV,     28,    1 <<  9,  32,    10,  GAUSSIAN       } }  // ia.cr/2023/1564; TODO: gadgetbase, baseRK??
     });
     // clang-format on
 
