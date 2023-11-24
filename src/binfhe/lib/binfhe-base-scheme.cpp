@@ -100,26 +100,52 @@ LWECiphertext BinFHEScheme::EvalBinGate(const std::shared_ptr<BinFHECryptoParams
 
     auto acc{BootstrapGateCore(params, gate, EK.BSkey, ctprep)};
 
-    // the accumulator result is encrypted w.r.t. the transposed secret key
-    // we can transpose "a" to get an encryption under the original secret key
-    std::vector<NativePoly>& accVec{acc->GetElements()};
-    accVec[0] = accVec[0].Transpose();
-    accVec[0].SetFormat(Format::COEFFICIENT);
-    accVec[1].SetFormat(Format::COEFFICIENT);
+    if (params->GetRingGSWParams()->GetMethod() == BINFHE_METHOD::XZDDF) {
+        
+        const auto& LWEParams = params->GetLWEParams();
+        
+        NativePoly accPol = acc->GetElements()[0];
+        accPol.SetFormat(Format::COEFFICIENT);
+        NativePoly a = accPol.Clone();
+        std::cout << "accPol c0: " << accPol.GetValues()[0].ConvertToInt() << " a c0: " << a.GetValues()[0].ConvertToInt() << std::endl;
 
-    // we add Q/8 to "b" to to map back to Q/4 (i.e., mod 2) arithmetic.
-    const auto& LWEParams = params->GetLWEParams();
-    NativeInteger Q{LWEParams->GetQ()};
-    NativeInteger b{(Q >> 3) + 1};
-    b.ModAddFastEq(accVec[1][0], Q);
+        const auto N = a.GetLength();
+        for (uint32_t i = 0; i < N; ++i) {
+            a[i].SetValue(-accPol[N-i]);
+        }
 
-    auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(accVec[0].GetValues()), std::move(b));
-    // Modulus switching to a middle step Q'
-    auto ctMS = LWEscheme->ModSwitch(LWEParams->GetqKS(), ctExt);
-    // Key switching
-    auto ctKS = LWEscheme->KeySwitch(LWEParams, EK.KSkey, ctMS);
-    // Modulus switching
-    return LWEscheme->ModSwitch(ct1->GetModulus(), ctKS);
+        NativeInteger b("0");
+
+        auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(a.GetValues()), std::move(b));
+        // Modulus switching to a middle step Q'
+        auto ctMS = LWEscheme->ModSwitch(LWEParams->GetqKS(), ctExt);
+        // Key switching
+        auto ctKS = LWEscheme->KeySwitch(LWEParams, EK.KSkey, ctMS);
+        // Modulus switching
+        return LWEscheme->ModSwitch(ct1->GetModulus(), ctKS);
+        
+    } else {
+        // the accumulator result is encrypted w.r.t. the transposed secret key
+        // we can transpose "a" to get an encryption under the original secret key
+        std::vector<NativePoly>& accVec{acc->GetElements()};
+        accVec[0] = accVec[0].Transpose();
+        accVec[0].SetFormat(Format::COEFFICIENT);
+        accVec[1].SetFormat(Format::COEFFICIENT);
+
+        // we add Q/8 to "b" to to map back to Q/4 (i.e., mod 2) arithmetic.
+        const auto& LWEParams = params->GetLWEParams();
+        NativeInteger Q{LWEParams->GetQ()};
+        NativeInteger b{(Q >> 3) + 1};
+        b.ModAddFastEq(accVec[1][0], Q);
+
+        auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(accVec[0].GetValues()), std::move(b));
+        // Modulus switching to a middle step Q'
+        auto ctMS = LWEscheme->ModSwitch(LWEParams->GetqKS(), ctExt);
+        // Key switching
+        auto ctKS = LWEscheme->KeySwitch(LWEParams, EK.KSkey, ctMS);
+        // Modulus switching
+        return LWEscheme->ModSwitch(ct1->GetModulus(), ctKS);
+    }
 }
 
 // Full evaluation as described in https://eprint.iacr.org/2020/086
@@ -499,50 +525,70 @@ RLWECiphertext BinFHEScheme::BootstrapGateCore(const std::shared_ptr<BinFHECrypt
         OPENFHE_THROW(config_error, errMsg);
     }
 
-    auto& LWEParams  = params->GetLWEParams();
-    auto& RGSWParams = params->GetRingGSWParams();
-    auto polyParams  = RGSWParams->GetPolyParams();
 
-    // Specifies the range [q1,q2) that will be used for mapping
-    NativeInteger p  = ct->GetptModulus();
-    NativeInteger q  = ct->GetModulus();
-    uint32_t qHalf   = q.ConvertToInt() >> 1;
-    NativeInteger q1 = RGSWParams->GetGateConst()[static_cast<size_t>(gate)];
-    NativeInteger q2 = q1.ModAddFast(NativeInteger(qHalf), q);
+    if (params->GetRingGSWParams()->GetMethod() == BINFHE_METHOD::XZDDF) {
+        auto& RGSWParams = params->GetRingGSWParams();
+        auto polyParams  = RGSWParams->GetPolyParams();
+        
+        std::vector<NativePoly> res(2);
+        
+        res[0] = NativePoly(polyParams, Format::EVALUATION, true);
+        res[1] = NativePoly(polyParams, Format::EVALUATION, true);
 
-    // depending on whether the value is the range, it will be set
-    // to either Q/8 or -Q/8 to match binary arithmetic
-    NativeInteger Q      = LWEParams->GetQ();
-    NativeInteger Q2p    = Q / NativeInteger(2 * p) + 1;
-    NativeInteger Q2pNeg = Q - Q2p;
+        res[1][0].SetValue(ct->GetB());             // TODO: add b in end of GetA() instead --- ring might have other modulus!!!
 
-    uint32_t N = LWEParams->GetN();
-    NativeVector m(N, Q);
-    // Since q | (2*N), we deal with a sparse embedding of Z_Q[x]/(X^{q/2}+1) to
-    // Z_Q[x]/(X^N+1)
-    uint32_t factor = (2 * N / q.ConvertToInt());
+        std::cout << "b1: " << ct->GetB().ConvertToInt() << std::endl;
 
-    const NativeInteger& b = ct->GetB();
-    for (size_t j = 0; j < qHalf; ++j) {
-        NativeInteger temp = b.ModSub(j, q);
-        if (q1 < q2)
-            m[j * factor] = ((temp >= q1) && (temp < q2)) ? Q2pNeg : Q2p;
-        else
-            m[j * factor] = ((temp >= q2) && (temp < q1)) ? Q2p : Q2pNeg;
+        auto acc = std::make_shared<RLWECiphertextImpl>(std::move(res));
+        ACCscheme->EvalAcc(RGSWParams, ek, acc, ct->GetA());
+        return acc;
+
+    } else {
+        auto& LWEParams  = params->GetLWEParams();
+        auto& RGSWParams = params->GetRingGSWParams();
+        auto polyParams  = RGSWParams->GetPolyParams();
+
+        // Specifies the range [q1,q2) that will be used for mapping
+        NativeInteger p  = ct->GetptModulus();
+        NativeInteger q  = ct->GetModulus();
+        uint32_t qHalf   = q.ConvertToInt() >> 1;
+        NativeInteger q1 = RGSWParams->GetGateConst()[static_cast<size_t>(gate)];
+        NativeInteger q2 = q1.ModAddFast(NativeInteger(qHalf), q);
+
+        // depending on whether the value is the range, it will be set
+        // to either Q/8 or -Q/8 to match binary arithmetic
+        NativeInteger Q      = LWEParams->GetQ();
+        NativeInteger Q2p    = Q / NativeInteger(2 * p) + 1;
+        NativeInteger Q2pNeg = Q - Q2p;
+
+        uint32_t N = LWEParams->GetN();
+        NativeVector m(N, Q);
+        // Since q | (2*N), we deal with a sparse embedding of Z_Q[x]/(X^{q/2}+1) to
+        // Z_Q[x]/(X^N+1)
+        uint32_t factor = (2 * N / q.ConvertToInt());
+
+        const NativeInteger& b = ct->GetB();
+        for (size_t j = 0; j < qHalf; ++j) {
+            NativeInteger temp = b.ModSub(j, q);
+            if (q1 < q2)
+                m[j * factor] = ((temp >= q1) && (temp < q2)) ? Q2pNeg : Q2p;
+            else
+                m[j * factor] = ((temp >= q2) && (temp < q1)) ? Q2p : Q2pNeg;
+        }
+        std::vector<NativePoly> res(2);
+        // no need to do NTT as all coefficients of this poly are zero
+        res[0] = NativePoly(polyParams, Format::EVALUATION, true);
+        res[1] = NativePoly(polyParams, Format::COEFFICIENT, false);
+        res[1].SetValues(std::move(m), Format::COEFFICIENT);
+        res[1].SetFormat(Format::EVALUATION);
+
+        // main accumulation computation
+        // the following loop is the bottleneck of bootstrapping/binary gate
+        // evaluation
+        auto acc = std::make_shared<RLWECiphertextImpl>(std::move(res));
+        ACCscheme->EvalAcc(RGSWParams, ek, acc, ct->GetA());
+        return acc;
     }
-    std::vector<NativePoly> res(2);
-    // no need to do NTT as all coefficients of this poly are zero
-    res[0] = NativePoly(polyParams, Format::EVALUATION, true);
-    res[1] = NativePoly(polyParams, Format::COEFFICIENT, false);
-    res[1].SetValues(std::move(m), Format::COEFFICIENT);
-    res[1].SetFormat(Format::EVALUATION);
-
-    // main accumulation computation
-    // the following loop is the bottleneck of bootstrapping/binary gate
-    // evaluation
-    auto acc = std::make_shared<RLWECiphertextImpl>(std::move(res));
-    ACCscheme->EvalAcc(RGSWParams, ek, acc, ct->GetA());
-    return acc;
 }
 
 // Functions below are for large-precision sign evaluation,

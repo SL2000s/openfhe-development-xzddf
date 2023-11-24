@@ -40,7 +40,7 @@ public:
                  const NativeVector& a) const override;
 
 private:
-    /**
+    /** TODO: remove
    * DM Key generation for internal Ring GSW as described in https://eprint.iacr.org/2014/816
    *
    * @param params a shared pointer to RingGSW scheme parameters
@@ -51,7 +51,7 @@ private:
     RingGSWEvalKey KeyGenDM(const std::shared_ptr<RingGSWCryptoParams>& params, const NativePoly& skNTT,
                             LWEPlaintext m) const;
 
-    /**
+    /** TODO: change name
    * DM Accumulation as described in https://eprint.iacr.org/2020/086
    *
    * @param params a shared pointer to RingGSW scheme parameters
@@ -61,6 +61,22 @@ private:
    */
     void AddToAccDM(const std::shared_ptr<RingGSWCryptoParams>& params, ConstRingGSWEvalKey& ek,
                     RLWECiphertext& acc) const;
+    
+    /**
+   * DM Key generation for internal Ring GSW as described in https://eprint.iacr.org/2014/816
+   *
+   * @param params a shared pointer to RingGSW scheme parameters
+   * @param skNTT secret key polynomial in the EVALUATION representation
+   * @param m a plaintext
+   * @return a shared pointer to the resulting keys
+   */
+    RingGSWEvalKey NTRUencrypt(const std::shared_ptr<RingGSWCryptoParams>& params, const NativePoly& skNTT,
+                                   NativePoly m) const;
+
+    // TODO: add explainations parameters
+    NativePoly GetXPower(const std::shared_ptr<RingGSWCryptoParams>& params, LWEPlaintext m) const;
+    NativePoly GetRotPol(const std::shared_ptr<RingGSWCryptoParams>& params, uint32_t expTransform) const;
+    NativePoly ExternProd(const std::shared_ptr<RingGSWCryptoParams> &params, NativePoly c1, std::vector<PolyImpl<NativeVector>> c2) const;
 };
 
 }  // namespace lbcrypto
