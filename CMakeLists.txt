@@ -114,7 +114,7 @@ message( STATUS "USE_MACPORTS:     ${USE_MACPORTS}")
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # require at least gcc 9.0
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-        message(WARNING "GCC version should be at least 9.0.")
+        message(WARNING "GCC version should be at least 9.0. (now ${CMAKE_CXX_COMPILER_VERSION})")
     endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     # require at least clang 10
