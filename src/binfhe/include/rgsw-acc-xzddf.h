@@ -40,28 +40,7 @@ public:
                  const NativeVector& a) const override;
 
 private:
-    /** TODO: remove
-   * DM Key generation for internal Ring GSW as described in https://eprint.iacr.org/2014/816
-   *
-   * @param params a shared pointer to RingGSW scheme parameters
-   * @param skNTT secret key polynomial in the EVALUATION representation
-   * @param m a plaintext
-   * @return a shared pointer to the resulting keys
-   */
-    RingGSWEvalKey KeyGenDM(const std::shared_ptr<RingGSWCryptoParams>& params, const NativePoly& skNTT,
-                            LWEPlaintext m) const;
-
-    /** TODO: change name
-   * DM Accumulation as described in https://eprint.iacr.org/2020/086
-   *
-   * @param params a shared pointer to RingGSW scheme parameters
-   * @param ek evaluation key for Ring GSW
-   * @param acc previous value of the accumulator
-   * @return
-   */
-    void AddToAccDM(const std::shared_ptr<RingGSWCryptoParams>& params, ConstRingGSWEvalKey& ek,
-                    RLWECiphertext& acc) const;
-    
+    // TODO: change explainations
     /**
    * DM Key generation for internal Ring GSW as described in https://eprint.iacr.org/2014/816
    *
@@ -70,7 +49,7 @@ private:
    * @param m a plaintext
    * @return a shared pointer to the resulting keys
    */
-    RingGSWEvalKey NTRUencrypt(const std::shared_ptr<RingGSWCryptoParams>& params, const NativePoly& skNTT,
+    RingGSWEvalKey NTRUencrypt(const std::shared_ptr<RingGSWCryptoParams>& params, const NativePoly& skNTTinv,
                                    NativePoly m) const;
 
     // TODO: add explainations parameters

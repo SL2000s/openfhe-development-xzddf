@@ -97,8 +97,8 @@ LWECiphertext BinFHEScheme::EvalBinGate(const std::shared_ptr<BinFHECryptoParams
         // for OR: 1,2 -> 1 and 3,0 -> 0
         LWEscheme->EvalAddEq(ctprep, ct2);
     }
-
-    auto acc{BootstrapGateCore(params, gate, EK.BSkey, ctprep)};
+    
+    auto acc{ BootstrapGateCore(params, gate, EK.BSkey, ctprep)};
 
     if (params->GetRingGSWParams()->GetMethod() == BINFHE_METHOD::XZDDF) {
         
@@ -109,9 +109,19 @@ LWECiphertext BinFHEScheme::EvalBinGate(const std::shared_ptr<BinFHECryptoParams
         NativePoly a = accPol.Clone();
         std::cout << "accPol c0: " << accPol.GetValues()[0].ConvertToInt() << " a c0: " << a.GetValues()[0].ConvertToInt() << std::endl;
 
+        // if LWE(m)=(a,a*s-m)
+        /*
         const auto N = a.GetLength();
-        for (uint32_t i = 0; i < N; ++i) {
+        for (uint32_t i = 1; i < N; ++i) {
             a[i].SetValue(-accPol[N-i]);
+        }
+        */
+        
+        // if LWE(m)=(a,a*s+m)
+        const auto N = a.GetLength();
+        a[0].SetValue(-accPol[0]);
+        for (uint32_t i = 1; i < N; ++i) {
+            a[i].SetValue(accPol[N-i]);
         }
 
         NativeInteger b("0");
@@ -525,10 +535,45 @@ RLWECiphertext BinFHEScheme::BootstrapGateCore(const std::shared_ptr<BinFHECrypt
         OPENFHE_THROW(config_error, errMsg);
     }
 
-
     if (params->GetRingGSWParams()->GetMethod() == BINFHE_METHOD::XZDDF) {
+        auto& LWEParams  = params->GetLWEParams();
         auto& RGSWParams = params->GetRingGSWParams();
         auto polyParams  = RGSWParams->GetPolyParams();
+
+        // Specifies the range [q1,q2) that will be used for mapping
+        NativeInteger p  = ct->GetptModulus();
+        NativeInteger q  = ct->GetModulus();
+        uint32_t qHalf   = q.ConvertToInt() >> 1;
+        NativeInteger q1 = RGSWParams->GetGateConst()[static_cast<size_t>(gate)];
+        NativeInteger q2 = q1.ModAddFast(NativeInteger(qHalf), q);
+
+        // depending on whether the value is the range, it will be set
+        // to either Q/8 or -Q/8 to match binary arithmetic
+        NativeInteger Q      = LWEParams->GetQ();
+        NativeInteger Q2p    = Q / NativeInteger(2 * p) + 1;
+        NativeInteger Q2pNeg = Q - Q2p;
+
+        uint32_t N = LWEParams->GetN();
+        NativeVector m(N, Q);
+        // Since q | (2*N), we deal with a sparse embedding of Z_Q[x]/(X^{q/2}+1) to
+        // Z_Q[x]/(X^N+1)
+        uint32_t factor = (2 * N / q.ConvertToInt());
+std::cout << "gate params.... q: " << q << " p: " << p << " Q: " << Q << " N:" << N << " q1: " << q1 << " q2: " << q2 << " fact: " << factor << std::endl;
+
+        const NativeInteger& b = ct->GetB();
+        for (size_t j = 0; j < qHalf; ++j) {
+            NativeInteger temp = b.ModSub(j, q);
+            if (q1 < q2)
+                m[j * factor] = ((temp >= q1) && (temp < q2)) ? Q2pNeg : Q2p;
+            else
+                m[j * factor] = ((temp >= q2) && (temp < q1)) ? Q2p : Q2pNeg;
+        }
+
+
+
+
+        // auto& RGSWParams = params->GetRingGSWParams();
+        // auto polyParams  = RGSWParams->GetPolyParams();
         
         std::vector<NativePoly> res(2);
         
