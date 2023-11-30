@@ -98,7 +98,15 @@ NativePoly RingGSWAccumulatorXZDDF::GetRotPol(const std::shared_ptr<RingGSWCrypt
     NativePoly r(params->GetPolyParams(), Format::COEFFICIENT, true);
     auto q = params->Getq().ConvertToInt();
     for (uint32_t i = 0; i < (q >> 1); ++i) {
-        r += GetXPower(params, -i*expTransform).Times( ((i+ (q>>3)) / (q>>2)) % 4 ); // r(x) = sum_{i=1..(q-1)}[round(i/(q/t))*X^(-i)]
+        // r += GetXPower(params, -i*expTransform).Times( ((i+ (q>>3)) / (q>>2)) % 4 ); // r(x) = sum_{i=1..(q-1)}[round(i/(q/t))*X^(-i)]
+        
+        int64_t coeff = 1;
+        if (i >= (q>>2)) {
+            coeff = -1;
+        }
+        r += GetXPower(params, -i*expTransform).Times(coeff);       // TODO: optimize this -- times(1) unnecessary
+
+
 
         // std::cout << " rot pol:   i: " << i << " q: " << q << " prod: " << ((i+ (q>>3)) / (q>>2)) % 4  << std::endl;
         // r += GetXPower(params, -i*expTransform).Times(i);
@@ -114,6 +122,18 @@ NativePoly RingGSWAccumulatorXZDDF::GetRotPol(const std::shared_ptr<RingGSWCrypt
         std::cout << std::endl;
         int tmp; std::cin >> tmp; */
     }    
+
+/*     auto values = r.GetValues();
+    auto len = values.GetLength();
+    std::cout << "Length: " << len << std::endl;
+    std::cout << "Elements:";
+    for (long unsigned int i = 0; i < len; i++) {
+        std::cout << " " << values[i].ConvertToInt();
+    }
+    std::cout << std::endl;
+    // int tmp; std::cin >> tmp;
+ */
+
     return r;
 }
 
@@ -144,7 +164,8 @@ NativePoly RingGSWAccumulatorXZDDF::ExternProd(const std::shared_ptr<RingGSWCryp
 void RingGSWAccumulatorXZDDF::EvalAcc(const std::shared_ptr<RingGSWCryptoParams>& params, ConstRingGSWACCKey& ek,
                                    RLWECiphertext& acc, const NativeVector& a) const {
 
-    const int64_t delta = params->GetQ().ConvertToInt() / 4; // TODO: add to RGSW params, and check if int64_t is best size
+    const int64_t delta = 7*(params->GetQ().ConvertToInt() >> 3); // TODO: add to RGSW params, and check if int64_t is best size
+    // const int64_t delta = params->GetQ().ConvertToInt() >> 2; // TODO: add to RGSW params, and check if int64_t is best size
 
     auto N = params->GetN();
     auto q       = params->Getq().ConvertToInt();
@@ -164,7 +185,8 @@ void RingGSWAccumulatorXZDDF::EvalAcc(const std::shared_ptr<RingGSWCryptoParams>
     std::cout << "rot pol exp: " << tmpRotPolExp << std::endl;
 
     auto accPol = GetRotPol(params, 2*(N/q)*wNow.ModInverse(2*N).ConvertToInt());
-    auto xPower0 = GetXPower(params, 2*(N/q)*b*wNow.ModInverse(2*N).ConvertToInt());
+    auto xPower0 = GetXPower(params, 2*(N/q)*(b+(q>>3))*wNow.ModInverse(2*N).ConvertToInt());   // q>>3: to transform 
+    // auto xPower0 = GetXPower(params, 2*(N/q)*b*wNow.ModInverse(2*N).ConvertToInt());
     accPol.SetFormat(Format::EVALUATION);
     xPower0.SetFormat(Format::EVALUATION);
     accPol = accPol * xPower0;

@@ -125,6 +125,9 @@ LWECiphertext BinFHEScheme::EvalBinGate(const std::shared_ptr<BinFHECryptoParams
         }
 
         NativeInteger b("0");
+        NativeInteger Q = LWEParams->GetQ();
+        b.ModAddFastEq((Q>>3), Q);
+
 
         auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(a.GetValues()), std::move(b));
         // Modulus switching to a middle step Q'
