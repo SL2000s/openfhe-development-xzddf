@@ -553,8 +553,6 @@ RLWECiphertext BinFHEScheme::BootstrapGateCore(const std::shared_ptr<BinFHECrypt
         // depending on whether the value is the range, it will be set
         // to either Q/8 or -Q/8 to match binary arithmetic
         NativeInteger Q      = LWEParams->GetQ();
-        NativeInteger Q2p    = Q / NativeInteger(2 * p) + 1;
-        NativeInteger Q2pNeg = Q - Q2p;
 
         uint32_t N = LWEParams->GetN();
         NativeVector m(N, Q);
@@ -562,18 +560,6 @@ RLWECiphertext BinFHEScheme::BootstrapGateCore(const std::shared_ptr<BinFHECrypt
         // Z_Q[x]/(X^N+1)
         uint32_t factor = (2 * N / q.ConvertToInt());
 std::cout << "gate params.... q: " << q << " p: " << p << " Q: " << Q << " N:" << N << " q1: " << q1 << " q2: " << q2 << " fact: " << factor << std::endl;
-
-        const NativeInteger& b = ct->GetB();
-        for (size_t j = 0; j < qHalf; ++j) {
-            NativeInteger temp = b.ModSub(j, q);
-            if (q1 < q2)
-                m[j * factor] = ((temp >= q1) && (temp < q2)) ? Q2pNeg : Q2p;
-            else
-                m[j * factor] = ((temp >= q2) && (temp < q1)) ? Q2p : Q2pNeg;
-        }
-
-
-
 
         // auto& RGSWParams = params->GetRingGSWParams();
         // auto polyParams  = RGSWParams->GetPolyParams();
@@ -583,7 +569,8 @@ std::cout << "gate params.... q: " << q << " p: " << p << " Q: " << Q << " N:" <
         res[0] = NativePoly(polyParams, Format::EVALUATION, true);
         res[1] = NativePoly(polyParams, Format::EVALUATION, true);
 
-        res[1][0].SetValue(ct->GetB());             // TODO: add b in end of GetA() instead --- ring might have other modulus!!!
+        auto b = ct->GetB() - (q1 + (q>>2));
+        res[1][0].SetValue(b);             // TODO: add b in end of GetA() instead --- ring might have other modulus!!!
 
         std::cout << "b1: " << ct->GetB().ConvertToInt() << std::endl;
 

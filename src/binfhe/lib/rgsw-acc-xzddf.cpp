@@ -185,7 +185,7 @@ void RingGSWAccumulatorXZDDF::EvalAcc(const std::shared_ptr<RingGSWCryptoParams>
     std::cout << "rot pol exp: " << tmpRotPolExp << std::endl;
 
     auto accPol = GetRotPol(params, 2*(N/q)*wNow.ModInverse(2*N).ConvertToInt());
-    auto xPower0 = GetXPower(params, 2*(N/q)*(b+(q>>3))*wNow.ModInverse(2*N).ConvertToInt());   // q>>3: to transform 
+    auto xPower0 = GetXPower(params, 2*(N/q)*(b)*wNow.ModInverse(2*N).ConvertToInt());   // q>>3: to transform 
     // auto xPower0 = GetXPower(params, 2*(N/q)*b*wNow.ModInverse(2*N).ConvertToInt());
     accPol.SetFormat(Format::EVALUATION);
     xPower0.SetFormat(Format::EVALUATION);
