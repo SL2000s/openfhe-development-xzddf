@@ -164,7 +164,6 @@ LWECiphertext LWEEncryptionScheme::EncryptN(const std::shared_ptr<LWECryptoParam
 
     auto dgg        = params->GetDgg();
     NativeInteger b = (m % p) * (mod / p) + dgg.GenerateInteger(mod);
-    std::cout << "b_in_LWE: " << b << " mod: " << mod << " m: " << m << " p: " << p << " dgg: " << dgg.GenerateInteger(mod) << " aaa" << (m % p) << " N " << N  << " q " << params->Getq() << std::endl;
     // #if defined(BINFHE_DEBUG)
     //    std::cout << b % mod << std::endl;
     //    std::cout << (m % p) * (mod / p) << std::endl;
@@ -187,7 +186,6 @@ LWECiphertext LWEEncryptionScheme::EncryptN(const std::shared_ptr<LWECryptoParam
     for (size_t i = 0; i < N; ++i) {
         b.ModAddEq(bp[i].ModMulFast(sp[i], mod, mu), mod);
     }
-    std::cout << "b_in_LWE final: " << b << " final LWE a: " << a[0] << " ... " << a[a.GetLength()-1] << std::endl;
   
     auto ct = std::make_shared<LWECiphertextImpl>(LWECiphertextImpl(a, b));
     ct->SetptModulus(p);
@@ -232,13 +230,6 @@ void LWEEncryptionScheme::Decrypt(const std::shared_ptr<LWECryptoParams>& params
 
     NativeInteger r = ct->GetB();
     
-    std::cout << "b_in_LWE_decr: " << r << " a_decr: " << a[0] << " ... " << a[a.GetLength()-1] << std::endl;
-    std::cout << "s_sk_elms: ";
-    for (uint32_t i = 0; i < sk->GetElement().GetLength(); ++i) {
-        std::cout << sk->GetElement()[i] << " ";    
-    }
-    std::cout << std::endl;
-
     r.ModSubFastEq(inner, mod);
 
     // Alternatively, rounding can be done as
@@ -248,8 +239,6 @@ void LWEEncryptionScheme::Decrypt(const std::shared_ptr<LWECryptoParams>& params
     r.ModAddFastEq((mod / (p * 2)), mod);
 
     *result = ((NativeInteger(p) * r) / mod).ConvertToInt();
-
-    std::cout << "decrLWEmod:" << mod.ConvertToInt() << std::endl;
 
 #if defined(WITH_NOISE_DEBUG)
     double error =

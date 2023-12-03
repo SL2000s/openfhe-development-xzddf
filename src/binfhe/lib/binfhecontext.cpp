@@ -243,15 +243,11 @@ LWECiphertext BinFHEContext::Encrypt(ConstLWEPublicKey& pk, LWEPlaintext m, BINF
     LWECiphertext ct = (mod == 0) ? m_LWEscheme->EncryptN(LWEParams, pk, m, p, LWEParams->GetQ()) :
                                     m_LWEscheme->EncryptN(LWEParams, pk, m, p, mod);
 
-    std::cout << "b_after_encr: " << ct->GetB() << " a: " << ct->GetA()[0] << " ... " << ct->GetA()[ct->GetA().GetLength()-1] << std::endl;
-
     // Switch from ct of modulus Q and dimension N to smaller q and n
     // This is done by default while calling Encrypt but the output could
     // be set to LARGE_DIM to skip this switching
     if (output == SMALL_DIM) {
         LWECiphertext ct1 = SwitchCTtoqn(m_BTKey.KSkey, ct);
-        std::cout << "SMALL DIM b_having_encr: " << ct1->GetB() << " a: " << ct1->GetA()[0] << " ... " << ct1->GetA()[ct1->GetA().GetLength()-1] << std::endl;
-
         return ct1;
     }
     return ct;
