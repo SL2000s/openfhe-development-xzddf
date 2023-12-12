@@ -86,7 +86,7 @@ RingGSWACCKey RingGSWAccumulatorXZDDF::KeyGenAcc(const std::shared_ptr<RingGSWCr
 void RingGSWAccumulatorXZDDF::EvalAcc(const std::shared_ptr<RingGSWCryptoParams>& params, ConstRingGSWACCKey& ek,
                                    RLWECiphertext& acc, const NativeVector& v) const {
 
-    const int64_t delta = 7*(params->GetQ().ConvertToInt() >> 3);               // The delta in https://eprint.iacr.org/2023/1564.pdf (move to RGSW params?)
+    const int64_t delta = params->GetQ().ConvertToInt() >> 3;               // The delta in https://eprint.iacr.org/2023/1564.pdf (move to RGSW params?)
 
     auto N = params->GetN();
     auto q       = params->Getq().ConvertToInt();
@@ -184,11 +184,11 @@ NativePoly RingGSWAccumulatorXZDDF::GetRotPol(const std::shared_ptr<RingGSWCrypt
     auto qFourth = q>>2;
 //#pragma omp parallel for num_threads(OpenFHEParallelControls.GetThreadLimit(qFourth))       // Is it sure that no data race will happen?
     for (uint32_t i = 0; i < qFourth; ++i) {        
-        r += GetXPower(params, -i*expTransform);
+        r += GetXPower(params, -i*expTransform).Times(-1);
     }
 //#pragma omp parallel for num_threads(OpenFHEParallelControls.GetThreadLimit(qFourth))       // Is it sure that no data race will happen?
     for (uint32_t i = qFourth; i < (q >> 1); ++i) {        
-        r += GetXPower(params, -i*expTransform).Times(-1);
+        r += GetXPower(params, -i*expTransform);
     }
     return r;
 }

@@ -534,15 +534,14 @@ RLWECiphertext BinFHEScheme::BootstrapGateCore(const std::shared_ptr<BinFHECrypt
 
         // Specifies the range [q1,q2=q1+q/2) that will be used for mapping 0
         NativeInteger q  = ct->GetModulus();
-        NativeInteger q1 = RGSWParams->GetGateConst()[static_cast<size_t>(gate)];
+        NativeInteger q0 = RGSWParams->GetGateConst()[static_cast<size_t>(gate)];
         
         std::vector<NativePoly> res(2);
         
         res[0] = NativePoly(polyParams, Format::EVALUATION, true);
         res[1] = NativePoly(polyParams, Format::EVALUATION, true);
 
-        auto b = ct->GetB() - (q1 + (q>>2));    // if t != 4: change q>>2 to ct->GetptModulus();
-
+        auto b = ct->GetB() - (q0 + (q>>2));    // = b + q/4 - q1;   if t != 4: change q>>2 to ct->GetptModulus();
         auto a = ct->GetA();
         auto n = a.GetLength();
         NativeVector v(n + 1);
