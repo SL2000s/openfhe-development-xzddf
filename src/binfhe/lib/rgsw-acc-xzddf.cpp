@@ -86,20 +86,20 @@ RingGSWACCKey RingGSWAccumulatorXZDDF::KeyGenAcc(const std::shared_ptr<RingGSWCr
 void RingGSWAccumulatorXZDDF::EvalAcc(const std::shared_ptr<RingGSWCryptoParams>& params, ConstRingGSWACCKey& ek,
                                    RLWECiphertext& acc, const NativeVector& v) const {
 
-    const int64_t delta = params->GetQ().ConvertToInt() >> 3;               // The delta in https://eprint.iacr.org/2023/1564.pdf (move to RGSW params?)
+    const int64_t delta = params->GetQ().ConvertToInt() >> 2;               // The delta in https://eprint.iacr.org/2023/1564.pdf (move to RGSW params?)
 
     auto N = params->GetN();
     auto q       = params->Getq().ConvertToInt();
     uint32_t n = v.GetLength() - 1;                     // -1: since last element is the LWE b (the rest is a)
 
     NativeInteger wNow = ( (2*2*N - 2*(N/q)*v[0].ConvertToInt()) + 1) % (2*N);  // w_i = (-(2*N/q)*a_i+1)
-
     NativeInteger wNext;
 
     auto b = v[n].ConvertToInt();
 
     auto accPol = GetRotPol(params, 2*(N/q)*wNow.ModInverse(2*N).ConvertToInt());
     auto xPower0 = GetXPower(params, 2*(N/q)*b*wNow.ModInverse(2*N).ConvertToInt());
+
     accPol.SetFormat(Format::EVALUATION);
     xPower0.SetFormat(Format::EVALUATION);
     accPol = accPol * xPower0;
@@ -180,14 +180,8 @@ NativePoly RingGSWAccumulatorXZDDF::GetXPower(const std::shared_ptr<RingGSWCrypt
 // Potential optimization: calculate vector instead of adding many polynomials with +=
 NativePoly RingGSWAccumulatorXZDDF::GetRotPol(const std::shared_ptr<RingGSWCryptoParams>& params, const uint32_t expTransform) const {
     NativePoly r(params->GetPolyParams(), Format::COEFFICIENT, true);
-    auto q = params->Getq().ConvertToInt();
-    auto qFourth = q>>2;
-//#pragma omp parallel for num_threads(OpenFHEParallelControls.GetThreadLimit(qFourth))       // Is it sure that no data race will happen?
-    for (uint32_t i = 0; i < qFourth; ++i) {        
-        r += GetXPower(params, -i*expTransform).Times(-1);
-    }
-//#pragma omp parallel for num_threads(OpenFHEParallelControls.GetThreadLimit(qFourth))       // Is it sure that no data race will happen?
-    for (uint32_t i = qFourth; i < (q >> 1); ++i) {        
+    const auto q = params->Getq().ConvertToInt();
+    for (uint32_t i = q >> 1; i < q; ++i) {
         r += GetXPower(params, -i*expTransform);
     }
     return r;

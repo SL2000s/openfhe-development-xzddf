@@ -116,8 +116,6 @@ LWECiphertext BinFHEScheme::EvalBinGate(const std::shared_ptr<BinFHECryptoParams
         }
 
         NativeInteger b("0");
-        NativeInteger Q = LWEParams->GetQ();
-        b.ModAddFastEq((Q>>3), Q);
 
         auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(a.GetValues()), std::move(b));
         // Modulus switching to a middle step Q'
@@ -541,7 +539,7 @@ RLWECiphertext BinFHEScheme::BootstrapGateCore(const std::shared_ptr<BinFHECrypt
         res[0] = NativePoly(polyParams, Format::EVALUATION, true);
         res[1] = NativePoly(polyParams, Format::EVALUATION, true);
 
-        auto b = ct->GetB() - (q0 + (q>>2));    // = b + q/4 - q1;   if t != 4: change q>>2 to ct->GetptModulus();
+        auto b = ct->GetB() + (q-q0);
         auto a = ct->GetA();
         auto n = a.GetLength();
         NativeVector v(n + 1);
