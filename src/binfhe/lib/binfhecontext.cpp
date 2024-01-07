@@ -40,11 +40,12 @@
 namespace lbcrypto {
 
 void BinFHEContext::GenerateBinFHEContext(uint32_t n, uint32_t N, const NativeInteger& q, const NativeInteger& Q,
-                                          double std, uint32_t baseKS, uint32_t baseG, uint32_t baseR,
-                                          SecretKeyDist keyDist, BINFHE_METHOD method, uint32_t numAutoKeys) {
-    auto lweparams = std::make_shared<LWECryptoParams>(n, N, q, Q, Q, std, baseKS);
-    auto rgswparams =
-        std::make_shared<RingGSWCryptoParams>(N, Q, q, baseG, baseR, method, std, keyDist, true, numAutoKeys);
+                                          const NativeInteger& modKS, double std, uint32_t baseKS, uint32_t baseG,
+                                          uint32_t baseR, SecretKeyDist keyDist, BINFHE_METHOD method,
+                                          uint32_t numAutoKeys) {
+    auto lweparams = std::make_shared<LWECryptoParams>(n, N, q, Q, modKS, std, baseKS, keyDist);
+    auto rgswparams = 
+        std::make_shared<RingGSWCryptoParams>(N, Q, q, baseG, baseR, method, std, keyDist, false, numAutoKeys);
     m_params       = std::make_shared<BinFHECryptoParams>(lweparams, rgswparams);
     m_binfhescheme = std::make_shared<BinFHEScheme>(method);
 }

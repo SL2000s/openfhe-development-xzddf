@@ -90,6 +90,7 @@ public:
    * @param N ring dimension for RingGSW/RLWE used in bootstrapping
    * @param q modulus for additive LWE
    * @param Q modulus for RingGSW/RLWE used in bootstrapping
+   * @param modKS modulus used for key switching
    * @param std standard deviation
    * @param baseKS the base used for key switching
    * @param baseG the gadget base used in bootstrapping
@@ -99,9 +100,10 @@ public:
    * @param numAutoKeys number of automorphism keys in LMKCDEY bootstrapping
    * @return creates the cryptocontext
    */
-    void GenerateBinFHEContext(uint32_t n, uint32_t N, const NativeInteger& q, const NativeInteger& Q, double std,
-                               uint32_t baseKS, uint32_t baseG, uint32_t baseR, SecretKeyDist keyDist = UNIFORM_TERNARY,
-                               BINFHE_METHOD method = GINX, uint32_t numAutoKeys = 10);
+    void GenerateBinFHEContext(uint32_t n, uint32_t N, const NativeInteger& q, const NativeInteger& Q,
+                               const NativeInteger& modKS, double std, uint32_t baseKS, uint32_t baseG,
+                               uint32_t baseR, SecretKeyDist keyDist, BINFHE_METHOD method,
+                               uint32_t numAutoKeys);
 
     /**
    * Creates a crypto context using custom parameters.
