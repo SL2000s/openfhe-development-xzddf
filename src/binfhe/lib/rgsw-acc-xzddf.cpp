@@ -147,9 +147,7 @@ RingGSWEvalKey RingGSWAccumulatorXZDDF::NTRUencrypt(const std::shared_ptr<RingGS
     std::vector<NativePoly> noisePols(d, NativePoly(params->GetDgg(), params->GetPolyParams(), Format::EVALUATION));
     RingGSWEvalKeyImpl result(1, d);
     for (uint32_t i = 0; i < d; ++i) {
-        result[0][i] = noisePols[i].Times(tau);
-        result[0][i] *= skNTTinv;
-        result[0][i] += m.Times(powersG[i]);
+        result[0][i] = noisePols[i].Times(tau) * skNTTinv + m.Times(powersG[i]);
     }
     return std::make_shared<RingGSWEvalKeyImpl>(result);
 }
