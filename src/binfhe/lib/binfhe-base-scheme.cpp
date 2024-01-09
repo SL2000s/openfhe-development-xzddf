@@ -103,6 +103,7 @@ LWECiphertext BinFHEScheme::EvalBinGate(const std::shared_ptr<BinFHECryptoParams
     if (params->GetRingGSWParams()->GetMethod() == BINFHE_METHOD::XZDDF) {
         
         const auto& LWEParams = params->GetLWEParams();
+        NativeInteger Q = LWEParams->GetQ();
         
         NativePoly accPol = acc->GetElements()[0];
         accPol.SetFormat(Format::COEFFICIENT);
@@ -110,13 +111,12 @@ LWECiphertext BinFHEScheme::EvalBinGate(const std::shared_ptr<BinFHECryptoParams
         
         // if LWE(m)=(a,a*s+m)
         const auto N = a.GetLength();
-        a[0].SetValue(-accPol[0]);
+        a[0].SetValue(Q - accPol[0]);
         for (uint32_t i = 1; i < N; ++i) {
             a[i].SetValue(accPol[N-i]);
         }
 
         NativeInteger b("0");
-        NativeInteger Q = LWEParams->GetQ();
         b.ModAddFastEq((Q>>3), Q);
 
         auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(a.GetValues()), std::move(b));
