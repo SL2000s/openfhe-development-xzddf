@@ -179,14 +179,15 @@ NativePoly RingGSWAccumulatorXZDDF::GetXPower(const std::shared_ptr<RingGSWCrypt
 NativePoly RingGSWAccumulatorXZDDF::GetRotPol(const std::shared_ptr<RingGSWCryptoParams>& params, const uint32_t expTransform) const {
     NativePoly r(params->GetPolyParams(), Format::COEFFICIENT, true);
     auto q = params->Getq().ConvertToInt();
+    auto N = params->GetN();
     auto qFourth = q>>2;
 //#pragma omp parallel for num_threads(OpenFHEParallelControls.GetThreadLimit(qFourth))       // Is it sure that no data race will happen?
-    for (uint32_t i = 0; i < qFourth; ++i) {        
-        r += GetXPower(params, -i*expTransform).Times(-1);
+    for (uint32_t i = 0; i < qFourth; ++i) {
+        r += GetXPower(params, q*2*N - i*expTransform ).Times(-1);
     }
 //#pragma omp parallel for num_threads(OpenFHEParallelControls.GetThreadLimit(qFourth))       // Is it sure that no data race will happen?
     for (uint32_t i = qFourth; i < (q >> 1); ++i) {        
-        r += GetXPower(params, -i*expTransform);
+        r += GetXPower(params, q*2*N - i*expTransform);
     }
     return r;
 }

@@ -540,8 +540,7 @@ RLWECiphertext BinFHEScheme::BootstrapGateCore(const std::shared_ptr<BinFHECrypt
         
         res[0] = NativePoly(polyParams, Format::EVALUATION, true);
         res[1] = NativePoly(polyParams, Format::EVALUATION, true);
-
-        auto b = ct->GetB() - (q0 + (q>>2));    // = b + q/4 - q1;   if t != 4: change q>>2 to ct->GetptModulus();
+        auto b = (2*q + ct->GetB() - (q0 + (q>>2))) % q;    // = b + q/4 - q1;   if t != 4: change q>>2 to ct->GetptModulus();
         auto a = ct->GetA();
         auto n = a.GetLength();
         NativeVector v(n + 1);
