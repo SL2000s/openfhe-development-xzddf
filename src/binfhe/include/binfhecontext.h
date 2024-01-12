@@ -96,7 +96,7 @@ public:
    * @param baseG the gadget base used in bootstrapping
    * @param baseR the base used for refreshing
    * @param keyDist secret key distribution
-   * @param method the bootstrapping method (DM or CGGI or LMKCDEY)
+   * @param method the bootstrapping method (DM or CGGI or LMKCDEY or XZDDF)
    * @param numAutoKeys number of automorphism keys in LMKCDEY bootstrapping
    * @return creates the cryptocontext
    */
@@ -114,7 +114,7 @@ public:
    * @param arbFunc whether need to evaluate an arbitrary function using functional bootstrapping
    * @param logQ log(input ciphertext modulus)
    * @param N ring dimension for RingGSW/RLWE used in bootstrapping
-   * @param method the bootstrapping method (DM or CGGI or LMKCDEY)
+   * @param method the bootstrapping method (DM or CGGI or LMKCDEY or XZDDF)
    * @param timeOptimization whether to use dynamic bootstrapping technique
    * @return creates the cryptocontext
    */
@@ -126,7 +126,7 @@ public:
    * most users.
    *
    * @param set the parameter set: TOY, MEDIUM, STD128, STD192, STD256 with variants, see binfhe_constants.h
-   * @param method the bootstrapping method (DM or CGGI or LMKCDEY)
+   * @param method the bootstrapping method (DM or CGGI or LMKCDEY or XZDDF)
    * @return create the cryptocontext
    */
     void GenerateBinFHEContext(BINFHE_PARAMSET set, BINFHE_METHOD method = GINX);
@@ -135,7 +135,7 @@ public:
    * Creates a crypto context using custom parameters.
    *
    * @param params the parameter context
-   * @param method the bootstrapping method (DM or CGGI or LMKCDEY)
+   * @param method the bootstrapping method (DM or CGGI or LMKCDEY or XZDDF)
    * @return create the cryptocontext
    */
     void GenerateBinFHEContext(const BinFHEContextParams& params, BINFHE_METHOD method = GINX);
