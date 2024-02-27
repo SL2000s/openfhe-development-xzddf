@@ -50,11 +50,10 @@ RingGSWACCKey RingGSWAccumulatorXZDDF::KeyGenAcc(const std::shared_ptr<RingGSWCr
     
     RingGSWACCKey ek = std::make_shared<RingGSWACCKeyImpl>(1, 1, (n+1) + (q-1));
     const auto skNTTinv = skNTT.MultiplicativeInverse();                            // will be on evaluation form
-
+    sv.SwitchModulus(q);
     // evk_0
     auto s0 = sv[0].ConvertToInt<int32_t>();
-    auto xExpS0 = GetXPower(params, s0);
-    xExpS0.SetFormat(Format::EVALUATION);
+    auto xExpS0 = GetXPower(params, s0, Format::EVALUATION);
     (*ek)[0][0][0] = NTRUencrypt(params, skNTTinv, xExpS0 * skNTTinv);
 
     // evk_i, i=1..(n-1)
@@ -86,14 +85,13 @@ RingGSWACCKey RingGSWAccumulatorXZDDF::KeyGenAcc(const std::shared_ptr<RingGSWCr
 void RingGSWAccumulatorXZDDF::EvalAcc(const std::shared_ptr<RingGSWCryptoParams>& params, ConstRingGSWACCKey& ek,
                                    RLWECiphertext& acc, const NativeVector& v) const {
 
-    const int64_t delta = params->GetQ().ConvertToInt() >> 3;               // The delta in https://eprint.iacr.org/2023/1564.pdf (move to RGSW params?)
+    const auto delta = params->GetQ().ConvertToInt() >> 3;               // The delta in https://eprint.iacr.org/2023/1564.pdf (move to RGSW params?)
 
     auto N = params->GetN();
-    auto q       = params->Getq().ConvertToInt();
-    uint32_t n = v.GetLength() - 1;                     // -1: since last element is the LWE b (the rest is a)
+    auto q = params->Getq().ConvertToInt();
+    auto n = v.GetLength() - 1;                     // -1: since last element is the LWE b (the rest is a)
 
     NativeInteger wNow = ( (2*2*N - 2*(N/q)*v[0].ConvertToInt()) + 1) % (2*N);  // w_i = (-(2*N/q)*a_i+1)
-
     NativeInteger wNext;
 
     auto b = v[n].ConvertToInt();
@@ -112,8 +110,7 @@ void RingGSWAccumulatorXZDDF::EvalAcc(const std::shared_ptr<RingGSWCryptoParams>
 
         if (i < n-1) {
             wNext = ((2*2*N - 2*(N/q)*v[i+1].ConvertToInt()) + 1) % (2*N);
-        }
-        else {
+        } else {
             wNext = 1;
         }
         
@@ -169,7 +166,7 @@ NativePoly RingGSWAccumulatorXZDDF::GetXPower(const std::shared_ptr<RingGSWCrypt
 
     NativePoly mPol(polyParams, Format::COEFFICIENT, true);
     mPol[mm].SetValue(NativeInteger("1"));
-    mPol = mPol.Times(sign);
+    mPol = mPol.Times(sign);                                    // Potential optimization: don't multiply the  whole polynomial by sign
     mPol.SetFormat(format);
 
     return mPol;
@@ -202,7 +199,7 @@ NativePoly RingGSWAccumulatorXZDDF::ExternProd(const std::shared_ptr<RingGSWCryp
     
     auto bitdecom = c1.BaseDecompose(baseBits, true);
 
-    for (unsigned int i = 0; i < bitdecom.size(); ++i) {
+    for (uint32_t i = 0; i < bitdecom.size(); ++i) {
         auto p1 = bitdecom[i];
         auto p2 = c2[i];
         p1.SetFormat(Format::EVALUATION);

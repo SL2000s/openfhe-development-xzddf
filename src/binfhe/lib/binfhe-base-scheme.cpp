@@ -532,7 +532,7 @@ RLWECiphertext BinFHEScheme::BootstrapGateCore(const std::shared_ptr<BinFHECrypt
         auto& RGSWParams = params->GetRingGSWParams();
         auto polyParams  = RGSWParams->GetPolyParams();
 
-        // Specifies the range [q1,q2=q1+q/2) that will be used for mapping 0
+        // Specifies the range [q0,q1=q0+q/2) that will be used for mapping 0
         NativeInteger q  = ct->GetModulus();
         NativeInteger q0 = RGSWParams->GetGateConst()[static_cast<size_t>(gate)];
         
