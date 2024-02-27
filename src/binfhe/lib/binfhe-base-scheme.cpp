@@ -219,26 +219,54 @@ LWECiphertext BinFHEScheme::Bootstrap(const std::shared_ptr<BinFHECryptoParams>&
 
     auto acc{BootstrapGateCore(params, AND, EK.BSkey, ctprep)};
 
-    // the accumulator result is encrypted w.r.t. the transposed secret key
-    // we can transpose "a" to get an encryption under the original secret key
-    std::vector<NativePoly>& accVec{acc->GetElements()};
-    accVec[0] = accVec[0].Transpose();
-    accVec[0].SetFormat(Format::COEFFICIENT);
-    accVec[1].SetFormat(Format::COEFFICIENT);
+    if (params->GetRingGSWParams()->GetMethod() == BINFHE_METHOD::XZDDF) {
+        
+        const auto& LWEParams = params->GetLWEParams();
+        NativeInteger Q = LWEParams->GetQ();
+        
+        NativePoly accPol = acc->GetElements()[0];
+        accPol.SetFormat(Format::COEFFICIENT);
+        NativePoly a = accPol.Clone();
+        
+        // if LWE(m)=(a,a*s+m)
+        const auto N = a.GetLength();
+        a[0].SetValue(Q - accPol[0]);
+        for (uint32_t i = 1; i < N; ++i) {
+            a[i].SetValue(accPol[N-i]);
+        }
 
-    // we add Q/8 to "b" to to map back to Q/4 (i.e., mod 2) arithmetic.
-    const auto& LWEParams = params->GetLWEParams();
-    NativeInteger Q{LWEParams->GetQ()};
-    NativeInteger b = Q / NativeInteger(2 * p) + 1;
-    b.ModAddFastEq(accVec[1][0], Q);
+        NativeInteger b("0");
+        b.ModAddFastEq((Q>>3), Q);
 
-    auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(accVec[0].GetValues()), std::move(b));
-    // Modulus switching to a middle step Q'
-    auto ctMS = LWEscheme->ModSwitch(LWEParams->GetqKS(), ctExt);
-    // Key switching
-    auto ctKS = LWEscheme->KeySwitch(LWEParams, EK.KSkey, ctMS);
-    // Modulus switching
-    return LWEscheme->ModSwitch(ct->GetModulus(), ctKS);
+        auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(a.GetValues()), std::move(b));
+        // Modulus switching to a middle step Q'
+        auto ctMS = LWEscheme->ModSwitch(LWEParams->GetqKS(), ctExt);
+        // Key switching
+        auto ctKS = LWEscheme->KeySwitch(LWEParams, EK.KSkey, ctMS);
+        // Modulus switching
+        return LWEscheme->ModSwitch(ct->GetModulus(), ctKS);
+    } else {
+        // the accumulator result is encrypted w.r.t. the transposed secret key
+        // we can transpose "a" to get an encryption under the original secret key
+        std::vector<NativePoly>& accVec{acc->GetElements()};
+        accVec[0] = accVec[0].Transpose();
+        accVec[0].SetFormat(Format::COEFFICIENT);
+        accVec[1].SetFormat(Format::COEFFICIENT);
+
+        // we add Q/8 to "b" to to map back to Q/4 (i.e., mod 2) arithmetic.
+        const auto& LWEParams = params->GetLWEParams();
+        NativeInteger Q{LWEParams->GetQ()};
+        NativeInteger b = Q / NativeInteger(2 * p) + 1;
+        b.ModAddFastEq(accVec[1][0], Q);
+
+        auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(accVec[0].GetValues()), std::move(b));
+        // Modulus switching to a middle step Q'
+        auto ctMS = LWEscheme->ModSwitch(LWEParams->GetqKS(), ctExt);
+        // Key switching
+        auto ctKS = LWEscheme->KeySwitch(LWEParams, EK.KSkey, ctMS);
+        // Modulus switching
+        return LWEscheme->ModSwitch(ct->GetModulus(), ctKS);
+    }
 }
 
 // Evaluation of the NOT operation; no key material is needed
